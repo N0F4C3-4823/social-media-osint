@@ -2,7 +2,7 @@
 
 A web-based tool for generating professional-grade Google dorks tailored to various social media platforms. Leverage advanced search operators to uncover publicly available profiles, posts, documents, and contact information for OSINT investigations.
 
-**Live Demo:** https://\<your-username\>.github.io/\<repository-name\>
+**Live Demo:** [Access Tool](https://n0f4c3-4823.github.io/social-media-osint/)
 
 ---
 
