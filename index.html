@@ -1,40 +1,532 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Video Test</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Advanced OSINT Google Dork Generator - 2025</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
+      background: #0d0d0d;
+      color: #00ff00;
+      font-family: 'Fira Code', monospace;
+      min-height: 100vh;
       display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      background-color: #1a1a1a;
-      color: #fff;
-      font-family: Arial, sans-serif;
       flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
     }
-
-    video {
-      max-width: 90%;
-      max-height: 80%;
-      border: 2px solid #ccc;
-      border-radius: 8px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    /* Cover */
+    #cover {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #091009;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 999;
     }
-
-    h1 {
-      margin-bottom: 20px;
+    #cover h1 {
+      color: #00ff00;
+      font-size: 2.5rem;
+      text-shadow: 0 0 12px #00ff00;
+      margin-bottom: 1rem;
     }
+    #cover .spinner {
+      width: 40px; height: 40px;
+      border: 4px solid #00ff00;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .matrix-bg {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none; opacity: 0.05;
+      background: url('matrix.png') repeat;
+      z-index: -1;
+    }
+    header {
+      width: 100%; max-width: 1200px;
+      background: #111;
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(0,255,0,0.5);
+    }
+    header h1 {
+      color: #00ff00;
+      text-shadow: 0 0 8px #00ff00;
+      font-size: 2rem;
+    }
+    .subtitle {
+      color: #33ff33;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+    }
+    .main-container {
+      width: 100%; max-width: 1200px;
+      padding: 2rem 1rem; flex: 1;
+    }
+    .screen { display: none; animation: fadeIn .4s ease-in-out; }
+    .screen.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px);} to { opacity:1; transform: translateY(0); } }
+    .platform-selector {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      justify-items: center;
+    }
+    .platform-card {
+      background: #1a1a1a;
+      border: 2px solid #00ff00;
+      border-radius: 12px;
+      width: 100%; max-width: 280px;
+      padding: 2rem;
+      text-align: center;
+      position: relative;
+      cursor: pointer;
+      transition: transform .3s, box-shadow .3s, border-color .3s;
+    }
+    .platform-card:hover {
+      transform: translateY(-6px) scale(1.05);
+      box-shadow: 0 0 15px rgba(0,255,0,0.6);
+      border-color: #33ff33;
+    }
+    .platform-icon {
+      font-size: 3.5rem;
+      margin-bottom: 1rem;
+      color: #33ff33;
+      text-shadow: 0 0 6px #33ff33;
+    }
+    .platform-name {
+      font-size: 1.2rem;
+      color: #00ff00;
+      margin-bottom: 0.5rem;
+    }
+    .platform-desc {
+      font-size: 0.85rem;
+      color: #aaa;
+    }
+    /* center Facebook & Telegram */
+    .platform-selector .platform-card:nth-of-type(4),
+    .platform-selector .platform-card:nth-of-type(5) {
+      justify-self: center;
+    }
+    /* Input Form */
+    .input-form {
+      background: #1a1a1a;
+      border: 2px solid #00ff00;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 0 20px rgba(0,255,0,0.3);
+    }
+    .form-title {
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      font-size: 1.6rem; color: #33ff33; margin-bottom: 1rem;
+    }
+    .form-subtitle {
+      text-align: center; color: #888; margin-bottom: 1.5rem;
+    }
+    .input-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem; margin-bottom: 1.5rem;
+    }
+    .input-group { display: flex; flex-direction: column; }
+    .input-label { color: #00ff00; font-size: 0.8rem; margin-bottom: 0.3rem; }
+    .input-field {
+      padding: 0.6rem 1rem; border-radius: 6px;
+      border: 2px solid #33ff33; background: #0d0d0d;
+      color: #00ff00; outline: none;
+      transition: border-color .3s, box-shadow .3s;
+    }
+    .input-field:focus {
+      border-color: #00ff00;
+      box-shadow: 0 0 8px rgba(0,255,0,0.5);
+    }
+    .button-group {
+      display: flex; gap: 1rem; justify-content: center;
+    }
+    .btn {
+      padding: 0.7rem 1.8rem; border: none; border-radius: 6px;
+      font-family: 'Fira Code'; font-weight: 500;
+      cursor: pointer; transition: background .3s, box-shadow .3s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #00ff00, #33ff33);
+      color: #0d0d0d;
+      box-shadow: 0 0 10px rgba(0,255,0,0.4);
+    }
+    .btn-secondary {
+      background: transparent;
+      color: #00ff00;
+      border: 2px solid #00ff00;
+    }
+    .loading {
+      display: none; text-align: center; color: #33ff33; margin: 1.5rem 0;
+    }
+    .loading.active { display: block; }
+    .loading .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid #33ff33; border-top-color: transparent;
+      border-radius: 50%; animation: spin 1s linear infinite;
+      display: inline-block; margin-right: 0.5rem;
+    }
+    /* Results */
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit,minmax(300px,1fr));
+      gap: 1.5rem; margin-top: 1.5rem;
+    }
+    .result-card {
+      background: #1a1a1a; border: 2px solid #00ff00;
+      border-radius: 10px; padding: 1.2rem;
+      box-shadow: 0 0 15px rgba(0,255,0,0.3);
+    }
+    .result-header {
+      font-size: 1.1rem; color: #33ff33;
+      margin-bottom: 0.8rem; border-bottom: 1px solid #00ff00;
+      padding-bottom: 0.4rem;
+    }
+    .dork-list { list-style: none; padding: 0; margin: 0; }
+    .dork-item {
+      background: #0d0d0d; border-left: 4px solid #33ff33;
+      border-radius: 6px; padding: 0.8rem; margin-bottom: 0.8rem;
+    }
+    .dork-query {
+      color: #00ffff; font-size: 0.95rem;
+      text-decoration: none; word-break: break-all;
+      margin-bottom: 0.3rem; display: block;
+    }
+    .dork-query:hover { color: #88ffff; }
+    .dork-desc { color: #aaa; font-size: 0.85rem; }
+    @media(max-width:768px){
+      .platform-selector, .input-grid, .results-grid { grid-template-columns:1fr; }
+    }
+    footer {
+      text-align: center;
+      color: #888;
+      padding: 1rem 0;
+      font-size: 0.85rem;
+    }
+    footer a { color: #33ff33; text-decoration: none; }
   </style>
 </head>
 <body>
-  <h1>Test Video</h1>
-  <video controls>
-    <source src="test2.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
+  <div id="cover">
+    <h1>Saumitra Kulkarni (N0F4C3)</h1>
+    <div class="spinner"></div>
+  </div>
+  <div class="matrix-bg"></div>
+  <header>
+    <h1>🔍 Advanced OSINT Dork Generator</h1>
+    <div class="subtitle">Professional Grade Google Dorking Tool - 2025 Edition</div>
+  </header>
+  <div class="main-container">
+    <!-- Platform Selection -->
+    <div id="platformScreen" class="screen active">
+      <div style="text-align:center; margin-bottom:1.5rem;">
+        <h2 style="color:#33ff33;">Select Target Platform</h2>
+      </div>
+      <div class="platform-selector">
+        <div class="platform-card" data-platform="instagram">
+          <div class="platform-icon">📷</div>
+          <div class="platform-name">Instagram</div>
+          <div class="platform-desc">Profiles, posts, stories, hashtags</div>
+        </div>
+        <div class="platform-card" data-platform="youtube">
+          <div class="platform-icon">🎥</div>
+          <div class="platform-name">YouTube</div>
+          <div class="platform-desc">Channels, videos, playlists, community</div>
+        </div>
+        <div class="platform-card" data-platform="linkedin">
+          <div class="platform-icon">💼</div>
+          <div class="platform-name">LinkedIn</div>
+          <div class="platform-desc">Professional profiles & companies</div>
+        </div>
+        <div class="platform-card" data-platform="facebook">
+          <div class="platform-icon">👥</div>
+          <div class="platform-name">Facebook</div>
+          <div class="platform-desc">Profiles, groups, events, marketplace</div>
+        </div>
+        <div class="platform-card" data-platform="telegram">
+          <div class="platform-icon">✈️</div>
+          <div class="platform-name">Telegram</div>
+          <div class="platform-desc">Channels, groups, bots, chats</div>
+        </div>
+      </div>
+    </div>
+    <!-- Input Form -->
+    <div id="inputScreen" class="screen">
+      <div class="input-form">
+        <div class="form-title">
+          <span id="platformIcon">📷</span>
+          <span id="platformTitle">Instagram</span> Parameters
+        </div>
+        <div class="form-subtitle">Enter details to generate custom dorks</div>
+        <form id="dorkForm">
+          <div class="input-grid" id="inputGrid"></div>
+          <div class="button-group">
+            <button type="button" class="btn btn-secondary" id="backBtn">← Back</button>
+            <button type="submit" class="btn btn-primary" id="generateBtn">Generate 🚀</button>
+          </div>
+        </form>
+      </div>
+      <div class="loading" id="loading"><div class="spinner"></div>Generating...</div>
+      <div class="results-grid" id="resultsContainer"></div>
+    </div>
+  </div>
+  <footer>
+    Made with ❤️ by <a href="https://www.linkedin.com/in/ehsaumitrakulkarni/" target="_blank">Saumitra Kulkarni (N0F4C3)</a>
+  </footer>
+  <script>
+    (() => {
+      setTimeout(()=>document.getElementById('cover').remove(), 3000);
+
+      const dorkTemplates = {
+        instagram: {
+          icon:'📷', name:'Instagram',
+          inputs:[
+            {id:'username',label:'Username'},
+            {id:'fullname',label:'Full Name'},
+            {id:'hashtag',label:'Hashtag'},
+            {id:'email',label:'Email Domain'},
+            {id:'location',label:'Location'},
+            {id:'phone',label:'Phone Area Code'}
+          ],
+          dorks:[
+            {title:'Profile / Posts',queries:[
+              ['site:instagram.com "{fullname}"','By full name',['fullname']],
+              ['site:instagram.com "@{username}"','Mentions & tags',['username']],
+              ['site:instagram.com inurl:"{username}"','Profile URL',['username']]
+            ]},
+            {title:'Contact & Docs',queries:[
+              ['site:instagram.com intext:"@{email}"','Emails',['email']],
+              ['site:instagram.com intext:"({phone})"','Phone numbers',['phone']],
+              ['site:instagram.com intext:"filetype:pdf"','PDF documents',['fullname']]
+            ]},
+            {title:'Media & Tags',queries:[
+              ['site:instagram.com/explore/tags/#{hashtag}','Posts w/ hashtag',['hashtag']],
+              ['site:instagram.com/reel intext:"{fullname}"','Reels',['fullname']],
+              ['site:instagram.com/tv intext:"{fullname}"','IGTV',['fullname']],
+              ['site:instagram.com/p intext:"Location:"','Geotagged posts',['location']],
+              ['site:instagram.com/stories "{fullname}"','Stories',['fullname']],
+              ['site:instagram.com inurl:highlight intext:"{fullname}"','Highlights',['fullname']],
+              ['site:instagram.com intext:"bit.ly"','Short links',['fullname']],
+              ['site:instagram.com intext:"linktr.ee"','Linktree links',['fullname']]
+            ]}
+          ]
+        },
+        youtube: {
+          icon:'🎥', name:'YouTube',
+          inputs:[
+            {id:'channel',label:'Channel Name'},
+            {id:'fullname',label:'Creator Name'},
+            {id:'keyword',label:'Keyword'},
+            {id:'email',label:'Email Domain'},
+            {id:'location',label:'Location'}
+          ],
+          dorks:[
+            {title:'Channels & URLs',queries:[
+              ['site:youtube.com/c "{channel}"','Channel pages',['channel']],
+              ['site:youtube.com/user "{channel}"','User URLs',['channel']],
+              ['site:youtube.com/about "{fullname}"','About pages',['fullname']]
+            ]},
+            {title:'Videos & Playlists',queries:[
+              ['site:youtube.com intext:"{keyword}"','All videos',['keyword']],
+              ['site:youtube.com/watch intext:"{keyword}"','Video comments',['keyword']],
+              ['site:youtube.com/playlist intext:"{keyword}"','Playlists',['keyword']],
+              ['site:youtube.com intitle:"{keyword}"','Title matches',['keyword']],
+              ['site:youtube.com/live intext:"{keyword}"','Live streams',['keyword']],
+              ['site:youtube.com intext:"Location: {location}"','Tagged location',['location']]
+            ]},
+            {title:'Community & Monetization',queries:[
+              ['site:youtube.com/community intext:"{keyword}"','Community posts',['keyword']],
+              ['site:youtube.com intext:"SuperChat"','SuperChats',['keyword']],
+              ['site:youtube.com intext:"membership"','Memberships',['keyword']]
+            ]},
+            {title:'Contact Info',queries:[
+              ['site:youtube.com intext:"@{email}"','Emails',['email']],
+            ]}
+          ]
+        },
+        linkedin: {
+          icon:'💼', name:'LinkedIn',
+          inputs:[
+            {id:'fullname',label:'Full Name'},
+            {id:'company',label:'Company'},
+            {id:'jobtitle',label:'Job Title'}
+          ],
+          dorks:[
+            {title:'Profiles & Docs',queries:[
+              ['site:linkedin.com/in intitle:"{fullname}"','Public profiles',['fullname']],
+              ['site:linkedin.com/pub intitle:"{fullname}"','Legacy URLs',['fullname']],
+              ['site:linkedin.com/in "{fullname}" "at {company}"','At company',['fullname','company']],
+              ['site:linkedin.com/in "{jobtitle}"','By job title',['jobtitle']],
+              ['site:linkedin.com/in filetype:pdf "{fullname}"','Resumes/PDFs',['fullname']],
+              ['site:linkedin.com/in filetype:doc "{fullname}"','Resumes/DOCs',['fullname']],
+              ['site:linkedin.com/in filetype:ppt "{fullname}"','Presentations',['fullname']]
+            ]},
+            {title:'Activity & Content',queries:[
+              ['site:linkedin.com/feed/update intext:"{fullname}"','Feed updates',['fullname']],
+              ['site:linkedin.com/pulse intext:"{fullname}"','Articles',['fullname']],
+              ['site:linkedin.com/recommendation intext:"{fullname}"','Recommendations',['fullname']]
+            ]},
+            {title:'Contact & Media',queries:[
+              ['site:linkedin.com/in intext:"contact"','Contact info',['fullname']],
+              ['site:linkedin.com/in intext:"@gmail.com"','Emails',['fullname']],
+              ['site:linkedin.com/in inurl:media','Media attachments',['fullname']],
+              ['site:linkedin.com/in intitle:"Skills & endorsements"','Skills/endorsements',['fullname']],
+              ['site:linkedin.com/in intext:"patent" OR intext:"publication"','Patents/Publications',['fullname']]
+            ]}
+          ]
+        },
+        facebook: {
+          icon:'👥', name:'Facebook',
+          inputs:[
+            {id:'fullname',label:'Full Name'},
+            {id:'location',label:'Location'}
+          ],
+          dorks:[
+            {title:'Profiles & Groups',queries:[
+              ['site:facebook.com "{fullname}"','Public posts/pages',['fullname']],
+              ['site:facebook.com intext:"@gmail.com"','Emails',['fullname']],
+              ['site:facebook.com/groups intitle:"{fullname}"','Groups',['fullname']],
+              ['site:facebook.com/friends intitle:"{fullname}"','Friends list',['fullname']]
+            ]},
+            {title:'Media & Content',queries:[
+              ['site:facebook.com/photos "{fullname}"','Photos',['fullname']],
+              ['site:facebook.com/events "{fullname}"','Events',['fullname']],
+              ['site:facebook.com/marketplace "{fullname}"','Marketplace',['fullname']],
+              ['site:facebook.com/notes "{fullname}"','Notes',['fullname']],
+              ['site:facebook.com/polls "{fullname}"','Polls',['fullname']],
+              ['site:facebook.com intext:"tagged"','Tagged posts',['fullname']],
+              ['site:facebook.com/games intitle:"{fullname}"','Apps/Games',['fullname']]
+            ]},
+            {title:'Contact & Check-ins',queries:[
+              ['site:facebook.com intext:"was here"','Check-ins',['fullname']],
+              ['site:facebook.com/about intext:"{fullname}"','About pages',['fullname']],
+              ['site:facebook.com intext:"({location})"','Phone numbers/location',['location']],
+              ['site:facebook.com intext:"contact"','Contacts',['fullname']]
+            ]}
+          ]
+        },
+        telegram: {
+          icon:'✈️', name:'Telegram',
+          inputs:[
+            {id:'username',label:'Username'},
+            {id:'channel',label:'Channel Name'},
+            {id:'bot',label:'Bot Username'}
+          ],
+          dorks:[
+            {title:'Channels & Bots',queries:[
+              ['site:t.me "{username}"','User/channel',['username']],
+              ['site:telegram.me "{username}"','Telegram.me',['username']],
+              ['site:telegram.org "{username}"','Telegram.org',['username']],
+              ['site:t.me/bot intext:"{bot}"','Bots',['bot']],
+              ['site:t.me intext:"pinned message"','Pinned messages',['channel']]
+            ]},
+            {title:'Content & Media',queries:[
+              ['site:t.me intext:"@{username}"','Mentions',['username']],
+              ['site:t.me intext:"poll" OR filetype:pdf OR filetype:zip','Polls/docs',['channel']],
+              ['site:t.me intext:"@gmail.com"','Emails',['username']],
+              ['site:t.me intext:"({phone})"','Phone numbers',['phone']]
+            ]}
+          ]
+        }
+      };
+
+      let currentPlatform = null;
+      const cards = document.querySelectorAll('.platform-card');
+      const iconEl = document.getElementById('platformIcon');
+      const titleEl = document.getElementById('platformTitle');
+      const inputGrid = document.getElementById('inputGrid');
+      const form = document.getElementById('dorkForm');
+      const backBtn = document.getElementById('backBtn');
+      const loading = document.getElementById('loading');
+      const resultsContainer = document.getElementById('resultsContainer');
+
+      function show(screenId) {
+        document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+      }
+
+      function buildInputs(platform) {
+        inputGrid.innerHTML = '';
+        dorkTemplates[platform].inputs.forEach(i=>{
+          const div = document.createElement('div');
+          div.className = 'input-group';
+          div.innerHTML = `<label class="input-label">${i.label}</label>
+            <input class="input-field" name="${i.id}" placeholder="${i.label}" />`;
+          inputGrid.appendChild(div);
+        });
+      }
+
+      function collect() {
+        const data = {};
+        new FormData(form).forEach((v,k)=>data[k]=v.trim());
+        return data;
+      }
+
+      function buildURL(q) {
+        return 'https://www.google.com/search?q=' + encodeURIComponent(q);
+      }
+
+      function generate(platform, inputs) {
+        resultsContainer.innerHTML = '';
+        const grid = document.createElement('div');
+        grid.className = 'results-grid';
+        dorkTemplates[platform].dorks.forEach(cat=>{
+          const ul = document.createElement('ul');
+          ul.className = 'dork-list';
+          cat.queries.forEach(([tmpl, desc, keys])=>{
+            if (keys.every(k=>inputs[k])) {
+              let q = tmpl;
+              keys.forEach(k=> q=q.replace(`{${k}}`, inputs[k]));
+              const li = document.createElement('li');
+              li.className = 'dork-item';
+              li.innerHTML = `<a class="dork-query" href="${buildURL(q)}" target="_blank">${q}</a>
+                              <div class="dork-desc">${desc}</div>`;
+              ul.appendChild(li);
+            }
+          });
+          if (ul.children.length) {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            const h = document.createElement('div');
+            h.className = 'result-header';
+            h.textContent = cat.title;
+            card.appendChild(h);
+            card.appendChild(ul);
+            grid.appendChild(card);
+          }
+        });
+        resultsContainer.appendChild(grid);
+      }
+
+      cards.forEach(c=>{
+        c.addEventListener('click', ()=>{
+          currentPlatform = c.dataset.platform;
+          iconEl.textContent = dorkTemplates[currentPlatform].icon;
+          titleEl.textContent = dorkTemplates[currentPlatform].name;
+          buildInputs(currentPlatform);
+          show('inputScreen');
+        });
+      });
+
+      backBtn.addEventListener('click', ()=> show('platformScreen'));
+
+      form.addEventListener('submit', e=>{
+        e.preventDefault();
+        loading.classList.add('active');
+        const inputs = collect();
+        setTimeout(()=>{
+          generate(currentPlatform, inputs);
+          loading.classList.remove('active');
+        }, 300);
+      });
+    })();
+  </script>
 </body>
 </html>
